@@ -1,0 +1,101 @@
+---
+title: "BusMgmt 744, Exercise 1"
+output:
+  html_document:
+    df_print: paged
+---
+
+---
+title: "BusMgmt 744, Exercise 1"
+output:
+  html_document:
+    df_print: paged
+---
+
+### 1.  Data Preparation (20pts)
+- Create an R Notebook using RStudion and load the "${\tt Profit by Product.xlsx}$" data file. This table contains bank revenue, cost, and profit data organized by time, distribution channel, product, and customer.
+
+     - Randomly select a subset of 2000 observations from the data file using the R dplyr "${\tt sample\_n}$" command. 
+     
+     - Create R-friendly variable names using the "${\tt clean\_names}$" funtion found in the "${\tt janitor}$" package.
+     
+     - Create a new variable "${\tt log\_rev}$" by taking the log of "${\tt revenue}$".
+```{r}
+library(tidyverse)
+library(readxl)
+library(janitor)
+
+product_profit <- read_excel("Profit by Product.xlsx")
+sample_set <- sample_n(product_profit, 2000)
+
+sample_set <- sample_set %>%
+  clean_names()
+
+sample_set <- mutate(sample_set, log_rev = log(revenue))
+sample_set
+```
+### 2.  Numeric Description (30pts) 
+-  For variables ${\tt revenue}$, "${\tt profit}$" and ``${\tt product\_cost}$'' describe each variable by finding:
+   -  Mean
+   -  Mode(s)
+   -  Variance
+   -  Sample Standard Deviation
+   -  5 Number Summary
+```{r}
+mode_calc <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+sample_set %>%
+  summarise(sum = sum(revenue), mode = mode_calc(revenue), var = var(revenue), sd = sd(revenue)) 
+
+sample_set %>%
+summarise(sum = sum(profit), mode = mode_calc(profit), var = var(profit), sd = sd(profit))
+
+sample_set %>%
+summarise(sum = sum(product_cost), mode = mode_calc(product_cost), var = var(product_cost), sd = sd(product_cost))
+
+summary(sample_set$revenue)
+summary(sample_set$product_cost)
+summary(sample_set$profit)
+```
+	             
+
+### 3.  Visualizing the data (50pts)
+-  Draw a histrogram for "${\tt customer\_service\_cost}$" and describe the plot.
+&nbsp; &nbsp; The plot indicates that customer service cost is generally very low with about a count of 500 at or near zero. The vast majority of the sample is at or below $25. Additional breakdowns by quarter and product line did not show any different conclusions. 
+```{r}
+ggplot(sample_set, aes(x = customer_service_cost)) +
+   geom_histogram(bins=10)
+
+ggplot(sample_set, aes(x = customer_service_cost)) +
+   geom_histogram(bins=25) +
+   scale_x_continuous(limits = c(0,100))
+
+ggplot(sample_set, aes(x = customer_service_cost)) +
+   geom_histogram(bins=10) + 
+   facet_wrap(~ quarter)
+
+ggplot(sample_set, aes(x = customer_service_cost)) +
+   geom_histogram(bins=10) + 
+   facet_wrap(~ product_line)
+```
+-  Create a scatter plot of "${\tt revenue}$" vs. "${\tt profit}$". What relationship, if any, do you see?
+&nbsp; &nbsp; The plot indicates a non-linear relationship between revenue and profit. The direction is negative for negative profit values and positive for positive profit values. The points are largely bunched closely together indicating a fairly strong relationship. 
+```{r}
+ggplot(sample_set, aes(x = profit, y = revenue)) +
+   geom_point(alpha=0.5)
+```
+- Create box-whisker plots of "${\tt log\_rev}$" by "${\tt quarter}$". Describe the relationships of ${\tt log\_rev}$ within and between quarters.
+
+&nbsp; &nbsp; Log_rev appears to rise Q/Q. The 25th percentile, mean and 75% percentile all rose Q/Q. The letter value boxplot also helps to show this as well. Q3 saw fewer quantiles overall with log_rev skewing higher. This could maybe be due to something like seasonal factors. For further study, I would investigate reason why log_rev (revenue) skews upward closer to the end of the year.
+```{r}
+ggplot(sample_set, aes(x = quarter, y = log_rev)) +
+  geom_boxplot()
+
+library(lvplot)
+ggplot(sample_set, aes(x = quarter, y = log_rev)) +
+  geom_lv()
+```
+
